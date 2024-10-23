@@ -11,8 +11,8 @@
           type="text"
           v-model="codigo"
           @keyup.enter="registrarLectura"
-          placeholder="Escanea la matrícula"
-          aria-label="Matrícula"
+          placeholder="Escanea el código OF"
+          aria-label="Código OF"
         />
         <div v-if="loading" class="loading">Cargando...</div>
         <div v-if="error" class="error">
@@ -22,7 +22,7 @@
 
       <section v-if="producto" class="producto-detalles">
         <h2>Detalles del Producto</h2>
-        <p><strong>Matrícula:</strong> {{ producto.matricula }}</p>
+        <p><strong>Código OF:</strong> {{ producto.codigoof }}</p>
         <p><strong>Código Producto:</strong> {{ producto.codigoproducto }}</p>
         <p><strong>Descripción:</strong> {{ producto.descripcion }}</p>      
         <p>Largo:  <strong>{{ producto.largo }}</strong></p>
@@ -30,14 +30,14 @@
       </section>
 
       <section v-if="historial.length > 0" class="historial-cajas">
-        <h2>Últimas Matrículas Leídas</h2>
+        <h2>Últimos Códigos OF Leídos</h2>
         <div class="historial-grid">
           <div 
-            v-for="(histProducto, index) in historial.filter(p => p.matricula !== producto?.matricula)" 
+            v-for="(histProducto, index) in historial.filter(p => p.codigoof !== producto?.codigoof)" 
             :key="index" 
             class="codigo-card"
           >
-            <p>Matrícula: <strong>{{ histProducto.matricula }}</strong></p>
+            <p>Código OF: <strong>{{ histProducto.codigoof }}</strong></p>
             <p>Código Producto: <strong>{{ histProducto.codigoproducto }}</strong></p>
             <p>Descripción: <strong>{{ histProducto.descripcion }}</strong></p>
             <p>Largo:  <strong>{{ histProducto.largo }}</strong></p>
@@ -50,8 +50,8 @@
       <!-- Popup de confirmación con códigos de barras -->
       <div v-if="showConfirmPopup" class="popup">
           <div class="popup-content">
-            <!-- Mostrar la matrícula -->
-            <p>Esta matrícula ya ha sido leída por calidad.</p>
+            <!-- Mostrar el código OF -->
+            <p>Este código OF ya ha sido leído por calidad.</p>
             <p>¿Quiere sacar de la línea este producto?</p>
             <p>Escanee "Sí" para sacar o "No" para cancelar.</p>
 
@@ -89,8 +89,8 @@ export default {
     this.socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'update') {
-        if (!this.producto || this.producto.matricula !== data.producto.matricula) {
-          const exists = this.historial.some(p => p.matricula === data.producto.matricula);
+        if (!this.producto || this.producto.codigoof !== data.producto.codigoof) {
+          const exists = this.historial.some(p => p.codigoof === data.producto.codigoof);
           if (!exists) {
             this.historial.unshift(data.producto);
             if (this.historial.length > 4) {
@@ -127,7 +127,7 @@ export default {
 
         // Si no es "SI" o "NO", proceder con la solicitud GET al servidor
         if (!this.codigo) {
-          throw new Error("Por favor ingrese una matrícula válida.");
+          throw new Error("Por favor ingrese un código OF válido.");
         }
 
         const getResponse = await fetch(`http://127.0.0.1:8000/productos/${this.codigo}`);
@@ -158,8 +158,8 @@ export default {
           throw new Error("No se pudo registrar la lectura.");
         }
 
-        if (this.producto && this.producto.matricula !== producto.matricula) {
-          const exists = this.historial.some(p => p.matricula === this.producto.matricula);
+        if (this.producto && this.producto.codigoof !== producto.codigoof) {
+          const exists = this.historial.some(p => p.codigoof === this.producto.codigoof);
           if (!exists) {
             this.historial.unshift(this.producto);
             if (this.historial.length > 4) {
@@ -203,7 +203,7 @@ export default {
       this.isConfirming = true; // Bloqueamos nuevas confirmaciones hasta que termine
 
       try {
-        const response = await fetch(`http://127.0.0.1:8000/productos/${this.productoParaEliminar.matricula}/reset`, {
+        const response = await fetch(`http://127.0.0.1:8000/productos/${this.productoParaEliminar.codigoof}/reset`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -214,15 +214,15 @@ export default {
         }
 
         // Eliminar el producto del historial
-        this.historial = this.historial.filter(p => p.matricula !== this.productoParaEliminar.matricula);
+        this.historial = this.historial.filter(p => p.codigoof !== this.productoParaEliminar.codigoof);
 
         // Si el producto actual en el recuadro grande es el mismo que el que se va a eliminar, limpiar la variable 'producto'
-        if (this.producto?.matricula === this.productoParaEliminar.matricula) {
+        if (this.producto?.codigoof === this.productoParaEliminar.codigoof) {
           this.producto = null;
         }
 
         // Enviar mensaje de eliminación por WebSocket
-        this.socket.send(JSON.stringify({ type: 'delete', matricula: this.productoParaEliminar.matricula }));
+        this.socket.send(JSON.stringify({ type: 'delete', codigoof: this.productoParaEliminar.codigoof }));
 
         this.productoParaEliminar = null;
         this.showConfirmPopup = false;
@@ -265,6 +265,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 40px;
 }
 
 .popup-content {
@@ -278,7 +279,6 @@ export default {
   margin-top: 30px;
   display: flex;
   justify-content: space-around;
- 
 }
 
 .barcode-container svg {
@@ -295,12 +295,17 @@ export default {
   color: red;
   margin-top: 10px;
   text-align: center;
+  font-size: 35px;
 }
 
 .producto-detalles {
-  background-color: #f9f9f9;
+  background-color: rgb(155, 230, 230);
   padding: 20px;
   border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  font-size: 30px;
+  line-height: 1.6;
 }
 
 #app {
@@ -338,32 +343,6 @@ input {
 
 input:focus {
   border-color: #a4ccf7;
-}
-
-.loading {
-  font-style: italic;
-  color: #9ec4ec;
-}
-
-.error {
-  color: red;
-  margin-top: 10px;
-  font-size: 10px;
-  text-align: center;
-  font-size: 35px;
-}
-
-.producto-detalles {
-  padding: 20px;
-  background-color: #c0dbf1;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.producto-detalles {
-  font-size: 30px;
-  line-height: 1.6;
 }
 
 .historial-cajas {
@@ -414,28 +393,6 @@ input:focus {
 .titulo {
   grid-column: span 8; /* El título ocupa 8 columnas */
   justify-self: start; /* Alinea el título a la izquierda */
-}
-
-/* Estilos para el popup */
-.popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 40px;
- 
-}
-
-.popup-content {
-  background: white;
-  padding: 20px;
-  border-radius: 5px;
-  text-align: center;
 }
 
 .popup-buttons {

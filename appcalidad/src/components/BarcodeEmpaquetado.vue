@@ -10,8 +10,8 @@
           type="text"
           v-model="codigo"
           @keyup.enter="registrarLectura"
-          placeholder="Escanea la matrícula"
-          aria-label="Matrícula"
+          placeholder="Escanea el código OF"
+          aria-label="Código OF"
         />
         <div v-if="loading" class="loading">Cargando...</div>
         <div v-if="error" class="error">
@@ -20,19 +20,17 @@
       </section>
 
       <section v-if="historialFiltrado.length > 0" class="historial-cajas">
-        <h2>Matrículas Leídas por Calidad</h2>
+        <h2>Códigos OF Leídos por Calidad</h2>
         <div class="historial-grid">
           <div 
             v-for="(producto, index) in historialFiltrado.slice(0, 10)" 
             :key="index" 
-            class="codigo-card"
-          >
-            <p>Matrícula: <strong>{{ producto.matricula }}</strong></p>
+            :class="['codigo-card', { 'madera-card': /(cajón madera maciza|hibrido madera \+ cartón|pallet box|cartón propio)/i.test(producto.nombre_embalaje || '') }]">
+            <p>Código OF: <strong>{{ producto.codigoof }}</strong></p>
             <p>Código Producto: <strong>{{ producto.codigoproducto }}</strong></p>
             <p>Descripción: <strong>{{ producto.descripcion }}</strong></p>
-            <p>Largo: <strong>{{ producto.largo }}</strong> || Ancho: <strong>{{ producto.ancho }}</strong></p>
-            <!-- Renderizar el código de barras -->
-            <vue-barcode :value="producto.codigopanotec"></vue-barcode>
+            <p>Tipo Embalaje: <strong>{{ producto.nombre_embalaje || 'N/A' }}</strong></p>
+            <vue-barcode v-if="producto.nombre_embalaje === 'CARTÓN PANOTEC'" :value="producto.codigopanotec"></vue-barcode>
           </div>
         </div>
       </section>
@@ -78,8 +76,7 @@ export default {
           throw new Error('Error al registrar la lectura de empaquetado');
         }
 
-        // Eliminar el producto del historial local en la pantalla de empaquetado
-        this.historial = this.historial.filter(producto => producto.matricula !== this.codigo);
+        this.historial = this.historial.filter(producto => producto.codigoof !== this.codigo);
       } catch (error) {
         this.error = error.message;
       } finally {
@@ -88,6 +85,15 @@ export default {
       }
     }
   },
+
+  mounted() {
+  this.$nextTick(() => {
+    if (this.$refs.inputCodigo) {
+      this.$refs.inputCodigo.focus(); // Enfocar el input al montar el componente
+    }
+  });
+},
+ 
   created() {
     this.socket = new WebSocket("ws://127.0.0.1:8000/ws");
     this.socket.onopen = () => {
@@ -97,31 +103,31 @@ export default {
       console.error("Error en WebSocket:", error);
     };
     this.socket.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  
-  console.log('Mensaje recibido del WebSocket:', data);  // Depuración
-    
-    if (data.type === 'update') {
-      const productoExistente = this.historial.find(producto => producto.matricula === data.producto.matricula);
+      const data = JSON.parse(event.data);
       
-      if (!productoExistente) {
-        this.historial.unshift(data.producto);
+      console.log('Mensaje recibido del WebSocket:', data);
         
-        if (this.historial.length > 10) {
-          this.historial.pop();
+      if (data.type === 'update') {
+        const productoExistente = this.historial.find(producto => producto.codigoof === data.producto.codigoof);
+        
+        if (!productoExistente) {
+          this.historial.unshift(data.producto);
+          
+          if (this.historial.length > 10) {
+            this.historial.pop();
+          }
         }
+      } else if (data.type === 'delete') {
+        console.log('Producto a eliminar:', data.codigoof);
+        
+        this.historial = this.historial.filter(producto => producto.codigoof !== data.codigoof);
+        console.log("Producto eliminado del historial:", data.codigoof);
       }
-    } else if (data.type === 'delete') {
-      console.log('Producto a eliminar:', data.matricula);  // Depuración
-      
-      // Eliminar el producto de la lista de historial
-      this.historial = this.historial.filter(producto => producto.matricula !== data.matricula);
-      console.log("Producto eliminado del historial:", data.matricula);
-    }
-  };
+    };
   }
 };
 </script>
+
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
@@ -140,7 +146,7 @@ export default {
 
 header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 h1 {
@@ -148,7 +154,11 @@ h1 {
   color: #333;
 }
 
-
+.madera-card {
+  background-color: rgb(155, 230, 230);
+  color: rgb(0, 0, 0);
+  font-size: 25px;
+}
 
 input {
   width: 100%;
@@ -169,16 +179,16 @@ input {
 }
 
 .historial-cajas {
-  background-color: #ffffff;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 20px;
-  margin-top: 10px; /* Reduced margin */
+  margin-top: 10px;
 }
 
 .historial-cajas h2 {
-  font-size: 30px;
-  margin-bottom: 4px;
+  font-size: 25px;
+  margin-top: 0;
+  
 }
 
 .historial-grid {
@@ -187,15 +197,21 @@ input {
   gap: 20px;
 }
 
-
-
 .codigo-card {
-  background-color: #f9f9f9;
   border: 1px solid #ccc;
+  font-size: 25px;
   border-radius: 8px;
-  padding: 15px;
+  padding: 10px; /* Reduce el padding */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s, box-shadow 0.3s;
+  min-height: 400px; /* Altura mínima asegurada */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.codigo-card p {
+  margin: 5px 0; /* Reduce el margen entre los párrafos */
 }
 
 .codigo-card:hover {
