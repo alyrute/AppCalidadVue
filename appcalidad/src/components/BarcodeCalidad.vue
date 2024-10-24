@@ -85,7 +85,7 @@ export default {
   },
   created() {
     // Inicializamos el WebSocket y escuchamos los mensajes entrantes
-    this.socket = new WebSocket("ws://127.0.0.1:8000/ws");
+    this.socket = new WebSocket("ws://192.168.1.33:8080/ws");
     this.socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'update') {
