@@ -24,7 +24,7 @@ const store = createStore({
       commit('setLoading', true);
       commit('setError', null);
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/productos/of/${codigoOF}`);
+        const response = await axios.get(`http://192.168.1.33:8080/productos/of/${codigoOF}`);
         commit('setDatosProducto', response.data);
       } catch (error) {
         commit('setError', 'Error al obtener los datos del producto');
@@ -36,7 +36,7 @@ const store = createStore({
       commit('setLoading', true);
       commit('setError', null);
       try {
-        const response = await axios.put(`http://127.0.0.1:8000/productos/of/${codigoOF}/calidad`);
+        const response = await axios.put(`http://192.168.1.33:8080/productos/of/${codigoOF}/calidad`);
         commit('setDatosProducto', response.data);
       } catch (error) {
         commit('setError', 'Error al registrar la lectura de calidad');
