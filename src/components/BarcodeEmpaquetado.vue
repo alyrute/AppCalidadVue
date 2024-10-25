@@ -1,3 +1,4 @@
+#Cambios de 25/10
 <template>
   <div id="app">
     <header class="header-grid">
