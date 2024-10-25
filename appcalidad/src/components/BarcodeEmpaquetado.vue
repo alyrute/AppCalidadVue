@@ -67,7 +67,7 @@ export default {
       this.loading = true;
       this.error = null;
       try {
-        const url = `http://127.0.0.1:8000/productos/${this.codigo}/empaquetado`;
+        const url = `http://192.168.1.33:8080/productos/${this.codigo}/empaquetado`;
         const options = {
           method: 'PUT',
         };
@@ -88,7 +88,7 @@ export default {
     }
   },
   created() {
-    this.socket = new WebSocket("ws://127.0.0.1:8000/ws");
+    this.socket = new WebSocket("ws://192.168.1.33:8080/ws");
     this.socket.onopen = () => {
       console.log("Conexión WebSocket establecida");
     };
