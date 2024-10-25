@@ -85,7 +85,7 @@ export default {
   },
   created() {
     // Inicializamos el WebSocket y escuchamos los mensajes entrantes
-    this.socket = new WebSocket("ws://192.168.1.33:8080/ws");
+    this.socket = new WebSocket("ws://192.168.1.33:8000/ws");
     this.socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'update') {
@@ -130,7 +130,7 @@ export default {
           throw new Error("Por favor ingrese un código OF válido.");
         }
 
-        const getResponse = await fetch(`http://192.168.1.33:8080/productos/${this.codigo}`);
+        const getResponse = await fetch(`http://192.168.1.33:8000/productos/${this.codigo}`);
         
         if (!getResponse.ok) {
           throw new Error("Producto no encontrado.");
@@ -147,7 +147,7 @@ export default {
           return;
         }
 
-        const putResponse = await fetch(`http://192.168.1.33:8080/productos/${this.codigo}/calidad`, {
+        const putResponse = await fetch(`http://192.168.1.33:8000/productos/${this.codigo}/calidad`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -203,7 +203,7 @@ export default {
       this.isConfirming = true; // Bloqueamos nuevas confirmaciones hasta que termine
 
       try {
-        const response = await fetch(`http://192.168.1.33:8080/productos/${this.productoParaEliminar.codigoof}/reset`, {
+        const response = await fetch(`http://192.168.1.33:8000/productos/${this.productoParaEliminar.codigoof}/reset`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'

@@ -1,3 +1,4 @@
+#Cambios 25/10/2024
 <template>
   <div id="app">
     <header class="header-grid">
@@ -66,7 +67,9 @@ export default {
       this.loading = true;
       this.error = null;
       try {
-        const url = `http://192.168.1.33:8080/productos/${this.codigo}/empaquetado`;
+        const url = process.env.NODE_ENV === 'production' 
+          ? `http://192.168.1.33/empaquetado/productos/${this.codigo}/empaquetado`
+          : `http://192.168.1.33:8000/productos/${this.codigo}/empaquetado`;
         const options = {
           method: 'PUT',
         };
@@ -83,47 +86,63 @@ export default {
         this.loading = false;
         this.codigo = '';
       }
+    },
+
+    
+    connectWebSocket() {
+      const wsUrl = process.env.NODE_ENV === 'production' 
+        ? 'ws://192.168.1.33/empaquetado/ws' 
+        : 'ws://192.168.1.33:8000/ws';
+      this.socket = new WebSocket(wsUrl);
+
+      this.socket.onopen = () => {
+        console.log("Conexión WebSocket establecida");
+      };
+
+      this.socket.onerror = (error) => {
+        console.error("Error en WebSocket:", error);
+      };
+
+      this.socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        console.log('Mensaje recibido del WebSocket:', data);
+          
+        if (data.type === 'update') {
+          const productoExistente = this.historial.find(producto => producto.codigoof === data.producto.codigoof);
+          
+          if (!productoExistente) {
+            this.historial.unshift(data.producto);
+            
+            if (this.historial.length > 10) {
+              this.historial.pop();
+            }
+          }
+        } else if (data.type === 'delete') {
+          console.log('Producto a eliminar:', data.codigoof);
+          
+          this.historial = this.historial.filter(producto => producto.codigoof !== data.codigoof);
+          console.log("Producto eliminado del historial:", data.codigoof);
+        }
+      };
+
+      this.socket.onclose = () => {
+        console.log("Conexión WebSocket cerrada, intentando reconectar...");
+        setTimeout(this.connectWebSocket, 5000); // Intentar reconectar después de 5 segundos
+      };
     }
   },
 
   mounted() {
-  this.$nextTick(() => {
-    if (this.$refs.inputCodigo) {
-      this.$refs.inputCodigo.focus(); // Enfocar el input al montar el componente
-    }
-  });
-},
+    this.$nextTick(() => {
+      if (this.$refs.inputCodigo) {
+        this.$refs.inputCodigo.focus(); // Enfocar el input al montar el componente
+      }
+    });
+  },
  
   created() {
-    this.socket = new WebSocket("ws://192.168.1.33:8080/ws");
-    this.socket.onopen = () => {
-      console.log("Conexión WebSocket establecida");
-    };
-    this.socket.onerror = (error) => {
-      console.error("Error en WebSocket:", error);
-    };
-    this.socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      console.log('Mensaje recibido del WebSocket:', data);
-        
-      if (data.type === 'update') {
-        const productoExistente = this.historial.find(producto => producto.codigoof === data.producto.codigoof);
-        
-        if (!productoExistente) {
-          this.historial.unshift(data.producto);
-          
-          if (this.historial.length > 10) {
-            this.historial.pop();
-          }
-        }
-      } else if (data.type === 'delete') {
-        console.log('Producto a eliminar:', data.codigoof);
-        
-        this.historial = this.historial.filter(producto => producto.codigoof !== data.codigoof);
-        console.log("Producto eliminado del historial:", data.codigoof);
-      }
-    };
+    this.connectWebSocket();
   }
 };
 </script>
