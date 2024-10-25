@@ -1,4 +1,3 @@
-#Cambios 25/10/2024
 <template>
   <div id="app">
     <header class="header-grid">
@@ -85,7 +84,22 @@ export default {
     };
   },
   created() {
-    this.connectWebSocket();
+    // Inicializamos el WebSocket y escuchamos los mensajes entrantes
+    this.socket = new WebSocket("ws://192.168.1.33:8000/ws");
+    this.socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'update') {
+        if (!this.producto || this.producto.codigoof !== data.producto.codigoof) {
+          const exists = this.historial.some(p => p.codigoof === data.producto.codigoof);
+          if (!exists) {
+            this.historial.unshift(data.producto);
+            if (this.historial.length > 4) {
+              this.historial.pop();
+            }
+          }
+        }
+      }
+    };
   },
   mounted() {
     // Escuchar todos los escaneos
@@ -96,40 +110,6 @@ export default {
     window.removeEventListener('keyup', this.detectarEscaneo);
   },
   methods: {
-    connectWebSocket() {
-      const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'ws://192.168.1.33/empaquetado/ws' 
-        : 'ws://192.168.1.33:8080/ws';
-      this.socket = new WebSocket(wsUrl);
-
-      this.socket.onopen = () => {
-        console.log("Conexión WebSocket establecida");
-      };
-
-      this.socket.onerror = (error) => {
-        console.error("Error en WebSocket:", error);
-      };
-
-      this.socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'update') {
-          if (!this.producto || this.producto.codigoof !== data.producto.codigoof) {
-            const exists = this.historial.some(p => p.codigoof === data.producto.codigoof);
-            if (!exists) {
-              this.historial.unshift(data.producto);
-              if (this.historial.length > 4) {
-                this.historial.pop();
-              }
-            }
-          }
-        }
-      };
-
-      this.socket.onclose = () => {
-        console.log("Conexión WebSocket cerrada, intentando reconectar...");
-        setTimeout(this.connectWebSocket, 5000); // Intentar reconectar después de 5 segundos
-      };
-    },
     async registrarLectura() {
       this.error = null;
       this.loading = true;
@@ -150,7 +130,7 @@ export default {
           throw new Error("Por favor ingrese un código OF válido.");
         }
 
-        const getResponse = await fetch(`http://192.168.1.33:8080/productos/${this.codigo}`);
+        const getResponse = await fetch(`http://192.168.1.33:8000/productos/${this.codigo}`);
         
         if (!getResponse.ok) {
           throw new Error("Producto no encontrado.");
@@ -167,7 +147,7 @@ export default {
           return;
         }
 
-        const putResponse = await fetch(`http://192.168.1.33:8080/productos/${this.codigo}/calidad`, {
+        const putResponse = await fetch(`http://192.168.1.33:8000/productos/${this.codigo}/calidad`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -188,6 +168,7 @@ export default {
           }
         }
         
+
         this.producto = producto;
         this.codigo = '';
         this.socket.send(JSON.stringify({ type: 'update', producto: this.producto })); // Enviar actualización por WebSocket
@@ -222,7 +203,7 @@ export default {
       this.isConfirming = true; // Bloqueamos nuevas confirmaciones hasta que termine
 
       try {
-        const response = await fetch(`http://192.168.1.33:8080/productos/${this.productoParaEliminar.codigoof}/reset`, {
+        const response = await fetch(`http://192.168.1.33:8000/productos/${this.productoParaEliminar.codigoof}/reset`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'

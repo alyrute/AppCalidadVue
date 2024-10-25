@@ -69,7 +69,7 @@ export default {
       try {
         const url = process.env.NODE_ENV === 'production' 
           ? `http://192.168.1.33/empaquetado/productos/${this.codigo}/empaquetado`
-          : `http://192.168.1.33:8080/productos/${this.codigo}/empaquetado`;
+          : `http://192.168.1.33:8000/productos/${this.codigo}/empaquetado`;
         const options = {
           method: 'PUT',
         };
@@ -90,7 +90,7 @@ export default {
     connectWebSocket() {
       const wsUrl = process.env.NODE_ENV === 'production' 
         ? 'ws://192.168.1.33/empaquetado/ws' 
-        : 'ws://192.168.1.33:8080/ws';
+        : 'ws://192.168.1.33:8000/ws';
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
