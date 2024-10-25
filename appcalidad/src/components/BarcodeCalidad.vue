@@ -86,21 +86,7 @@ export default {
   },
   created() {
     // Inicializamos el WebSocket y escuchamos los mensajes entrantes
-    this.socket = new WebSocket("ws://192.168.1.33:8000/ws");
-    this.socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'update') {
-        if (!this.producto || this.producto.codigoof !== data.producto.codigoof) {
-          const exists = this.historial.some(p => p.codigoof === data.producto.codigoof);
-          if (!exists) {
-            this.historial.unshift(data.producto);
-            if (this.historial.length > 4) {
-              this.historial.pop();
-            }
-          }
-        }
-      }
-    };
+    this.connectWebSocket();
   },
   mounted() {
     // Escuchar todos los escaneos
@@ -109,12 +95,15 @@ export default {
   beforeUnmount() {
     // Limpiar el listener al destruir el componente
     window.removeEventListener('keyup', this.detectarEscaneo);
+    if (this.socket) {
+      this.socket.close();
+    }
   },
   methods: {
     connectWebSocket() {
       const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'ws://192.168.1.33/empaquetado/ws' 
-        : 'ws://192.168.1.33:8080/ws';
+        ? 'ws://192.168.1.33/calidad/ws' 
+        : 'ws://192.168.1.33:8000/ws';
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
@@ -277,7 +266,6 @@ export default {
   },
 };
 </script>
-
 
 
 
