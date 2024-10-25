@@ -102,8 +102,8 @@ export default {
   methods: {
     connectWebSocket() {
       const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'ws://192.168.1.33/calidad/ws' 
-        : 'ws://192.168.1.33:8000/ws';
+        ? 'ws://192.168.1.33/empaquetado/ws' 
+        : 'ws://192.168.1.33:8080/ws';
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
