@@ -84,22 +84,7 @@ export default {
     };
   },
   created() {
-    // Inicializamos el WebSocket y escuchamos los mensajes entrantes
-    this.socket = new WebSocket("ws://192.168.1.33:8080/ws");
-    this.socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'update') {
-        if (!this.producto || this.producto.codigoof !== data.producto.codigoof) {
-          const exists = this.historial.some(p => p.codigoof === data.producto.codigoof);
-          if (!exists) {
-            this.historial.unshift(data.producto);
-            if (this.historial.length > 4) {
-              this.historial.pop();
-            }
-          }
-        }
-      }
-    };
+    this.connectWebSocket();
   },
   mounted() {
     // Escuchar todos los escaneos
@@ -110,6 +95,40 @@ export default {
     window.removeEventListener('keyup', this.detectarEscaneo);
   },
   methods: {
+    connectWebSocket() {
+      const wsUrl = process.env.NODE_ENV === 'production' 
+        ? 'ws://192.168.1.33/empaquetado/ws' 
+        : 'ws://192.168.1.33:8080/ws';
+      this.socket = new WebSocket(wsUrl);
+
+      this.socket.onopen = () => {
+        console.log("Conexión WebSocket establecida");
+      };
+
+      this.socket.onerror = (error) => {
+        console.error("Error en WebSocket:", error);
+      };
+
+      this.socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'update') {
+          if (!this.producto || this.producto.codigoof !== data.producto.codigoof) {
+            const exists = this.historial.some(p => p.codigoof === data.producto.codigoof);
+            if (!exists) {
+              this.historial.unshift(data.producto);
+              if (this.historial.length > 4) {
+                this.historial.pop();
+              }
+            }
+          }
+        }
+      };
+
+      this.socket.onclose = () => {
+        console.log("Conexión WebSocket cerrada, intentando reconectar...");
+        setTimeout(this.connectWebSocket, 5000); // Intentar reconectar después de 5 segundos
+      };
+    },
     async registrarLectura() {
       this.error = null;
       this.loading = true;
@@ -168,7 +187,6 @@ export default {
           }
         }
         
-
         this.producto = producto;
         this.codigo = '';
         this.socket.send(JSON.stringify({ type: 'update', producto: this.producto })); // Enviar actualización por WebSocket
