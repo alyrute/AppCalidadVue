@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 #Cambios 25/10/2024
-=======
-#Cambios de 25/10
->>>>>>> 208fafdf62c7da81cd890e510a4ba1e2c7492461
 <template>
   <div id="app">
     <header class="header-grid">
@@ -73,11 +69,7 @@ export default {
       try {
         const url = process.env.NODE_ENV === 'production' 
           ? `http://192.168.1.33/empaquetado/productos/${this.codigo}/empaquetado`
-<<<<<<< HEAD
           : `http://192.168.1.33:8000/productos/${this.codigo}/empaquetado`;
-=======
-          : `http://192.168.1.33:8080/productos/${this.codigo}/empaquetado`;
->>>>>>> 208fafdf62c7da81cd890e510a4ba1e2c7492461
         const options = {
           method: 'PUT',
         };
@@ -95,19 +87,10 @@ export default {
         this.codigo = '';
       }
     },
-<<<<<<< HEAD
-
-    
     connectWebSocket() {
       const wsUrl = process.env.NODE_ENV === 'production' 
         ? 'ws://192.168.1.33/empaquetado/ws' 
         : 'ws://192.168.1.33:8000/ws';
-=======
-    connectWebSocket() {
-      const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'ws://192.168.1.33/empaquetado/ws' 
-        : 'ws://192.168.1.33:8080/ws';
->>>>>>> 208fafdf62c7da81cd890e510a4ba1e2c7492461
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {

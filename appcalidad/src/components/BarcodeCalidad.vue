@@ -85,7 +85,6 @@ export default {
     };
   },
   created() {
-<<<<<<< HEAD
     // Inicializamos el WebSocket y escuchamos los mensajes entrantes
     this.socket = new WebSocket("ws://192.168.1.33:8000/ws");
     this.socket.onmessage = (event) => {
@@ -102,9 +101,6 @@ export default {
         }
       }
     };
-=======
-    this.connectWebSocket();
->>>>>>> 208fafdf62c7da81cd890e510a4ba1e2c7492461
   },
   mounted() {
     // Escuchar todos los escaneos
