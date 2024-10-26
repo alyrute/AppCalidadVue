@@ -77,7 +77,6 @@ export default {
           throw new Error('Error al registrar la lectura de empaquetado');
         }
 
-        // Eliminar el producto del historial local en la pantalla de empaquetado
         this.historial = this.historial.filter(producto => producto.matricula !== this.codigo);
       } catch (error) {
         this.error = error.message;
@@ -96,31 +95,30 @@ export default {
       console.error("Error en WebSocket:", error);
     };
     this.socket.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  
-  console.log('Mensaje recibido del WebSocket:', data);  // Depuración
-    
-    if (data.type === 'update') {
-      const productoExistente = this.historial.find(producto => producto.matricula === data.producto.matricula);
-      
-      if (!productoExistente) {
-        this.historial.unshift(data.producto);
-        
-        if (this.historial.length > 10) {
-          this.historial.pop();
+      const data = JSON.parse(event.data);
+      console.log('Mensaje recibido del WebSocket:', data);
+
+      if (data.type === 'update') {
+        const productoExistente = this.historial.find(producto => producto.matricula === data.producto.matricula);
+
+        if (!productoExistente) {
+          this.historial.unshift(data.producto);
+
+          if (this.historial.length > 10) {
+            this.historial.pop();
+          }
         }
+      } else if (data.type === 'delete') {
+        console.log('Producto a eliminar:', data.matricula);
+
+        this.historial = this.historial.filter(producto => producto.matricula !== data.matricula);
+        console.log("Producto eliminado del historial:", data.matricula);
       }
-    } else if (data.type === 'delete') {
-      console.log('Producto a eliminar:', data.matricula);  // Depuración
-      
-      // Eliminar el producto de la lista de historial
-      this.historial = this.historial.filter(producto => producto.matricula !== data.matricula);
-      console.log("Producto eliminado del historial:", data.matricula);
-    }
-  };
+    };
   }
 };
 </script>
+
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');

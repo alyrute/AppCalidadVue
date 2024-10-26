@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import JsBarcode from 'jsbarcode'; // Importamos JsBarcode para generar los códigos de barras
+import JsBarcode from 'jsbarcode';
 
 export default {
   data() {
@@ -81,19 +81,16 @@ export default {
       socket: null,
       showConfirmPopup: false,
       productoParaEliminar: null,
-      isConfirming: false, // Bloqueo para evitar confirmaciones múltiples
+      isConfirming: false,
     };
   },
   created() {
-    // Inicializamos el WebSocket y escuchamos los mensajes entrantes
     this.connectWebSocket();
   },
   mounted() {
-    // Escuchar todos los escaneos
     window.addEventListener('keyup', this.detectarEscaneo);
   },
   beforeUnmount() {
-    // Limpiar el listener al destruir el componente
     window.removeEventListener('keyup', this.detectarEscaneo);
     if (this.socket) {
       this.socket.close();
@@ -129,25 +126,23 @@ export default {
 
       this.socket.onclose = () => {
         console.log("Conexión WebSocket cerrada, intentando reconectar...");
-        setTimeout(this.connectWebSocket, 5000); // Intentar reconectar después de 5 segundos
+        setTimeout(this.connectWebSocket, 5000);
       };
     },
     async registrarLectura() {
       this.error = null;
       this.loading = true;
       try {
-        // Filtrar el escaneo de "SI" o "NO" antes de hacer una solicitud al servidor
         const valorEscaneado = this.codigo.toUpperCase().trim();
 
         if (valorEscaneado === "SI") {
-          await this.confirmarEliminacion();  // Confirmar eliminación si se escanea "Sí"
+          await this.confirmarEliminacion();
           return;
         } else if (valorEscaneado === "NO") {
-          this.cancelarEliminacion();  // Cancelar eliminación si se escanea "No"
+          this.cancelarEliminacion();
           return;
         }
 
-        // Si no es "SI" o "NO", proceder con la solicitud GET al servidor
         if (!this.codigo) {
           throw new Error("Por favor ingrese un código OF válido.");
         }
@@ -162,9 +157,9 @@ export default {
 
         if (producto.lecturacalidadactiva) {
           this.productoParaEliminar = producto;
-          this.showConfirmPopup = true; // Mostrar popup cuando el producto ya fue leído
+          this.showConfirmPopup = true;
           this.codigo = '';
-          this.$nextTick(() => this.generateBarcodes()); // Asegurar que los códigos se generen después de que el DOM esté cargado
+          this.$nextTick(() => this.generateBarcodes());
           this.loading = false;
           return;
         }
@@ -192,15 +187,13 @@ export default {
         
         this.producto = producto;
         this.codigo = '';
-        this.socket.send(JSON.stringify({ type: 'update', producto: this.producto })); // Enviar actualización por WebSocket
+        this.socket.send(JSON.stringify({ type: 'update', producto: this.producto }));
       } catch (err) {
         this.error = err.message;
       } finally {
         this.loading = false;
       }
     },
-
-    // Detectar el escaneo de "Sí" o "No" cuando el popup está activo
     detectarEscaneo() {
       if (!this.showConfirmPopup) return;
 
@@ -211,17 +204,14 @@ export default {
         this.cancelarEliminacion();
       }
     },
-
     generateBarcodes() {
       JsBarcode("#barcodeSi", "SI", { format: "CODE128", lineColor: "#000", width: 2, height: 60, displayValue: true });
       JsBarcode("#barcodeNo", "NO", { format: "CODE128", lineColor: "#000", width: 2, height: 60, displayValue: true });
     },
-
     async confirmarEliminacion() {
-      // Verificar si ya se está ejecutando una confirmación para evitar duplicados
       if (this.isConfirming) return;
 
-      this.isConfirming = true; // Bloqueamos nuevas confirmaciones hasta que termine
+      this.isConfirming = true;
 
       try {
         const response = await fetch(`http://192.168.1.33:8081/productos/${this.productoParaEliminar.codigoof}/reset`, {
@@ -234,15 +224,12 @@ export default {
           throw new Error("No se pudo eliminar el producto.");
         }
 
-        // Eliminar el producto del historial
         this.historial = this.historial.filter(p => p.codigoof !== this.productoParaEliminar.codigoof);
 
-        // Si el producto actual en el recuadro grande es el mismo que el que se va a eliminar, limpiar la variable 'producto'
         if (this.producto?.codigoof === this.productoParaEliminar.codigoof) {
           this.producto = null;
         }
 
-        // Enviar mensaje de eliminación por WebSocket
         this.socket.send(JSON.stringify({ type: 'delete', codigoof: this.productoParaEliminar.codigoof }));
 
         this.productoParaEliminar = null;
@@ -251,17 +238,15 @@ export default {
       } catch (err) {
         this.error = err.message;
       } finally {
-        this.isConfirming = false; // Desbloqueamos la confirmación
+        this.isConfirming = false;
       }
     },
-
     cancelarEliminacion() {
-      this.productoParaEliminar = null;
       this.showConfirmPopup = false;
+      this.productoParaEliminar = null;
       this.codigo = '';
-      this.$refs.codigoInput.focus(); // Reenfocar el input
     }
-  },
+  }
 };
 </script>
 
