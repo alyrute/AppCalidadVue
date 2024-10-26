@@ -88,7 +88,7 @@ export default {
     }
   },
   created() {
-    this.socket = new WebSocket("ws://192.168.1.33:8081/ws");
+    this.socket = new WebSocket("ws://192.168.1.33:7979/ws");
     this.socket.onopen = () => {
       console.log("Conexión WebSocket establecida");
     };

@@ -101,7 +101,7 @@ export default {
   },
   methods: {
     connectWebSocket() {
-      const wsUrl = 'ws://192.168.1.33:8081/ws';
+      const wsUrl = 'ws://192.168.1.33:7979/ws';
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
