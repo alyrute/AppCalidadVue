@@ -87,38 +87,55 @@ export default {
     }
   },
   created() {
-    this.socket = new WebSocket("ws://192.168.1.33:7979/ws");
-    this.socket.onopen = () => {
-      console.log("Conexión WebSocket establecida");
-    };
-    this.socket.onerror = (error) => {
-      console.error("Error en WebSocket:", error);
-    };
-    this.socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('Mensaje recibido del WebSocket:', data);
+    this.connectWebSocket();
+  },
+  methods: {
+    connectWebSocket() {
+      const wsUrl = 'ws://192.168.1.33:7979/ws';
+      this.socket = new WebSocket(wsUrl);
 
-      if (data.type === 'update') {
-        const productoExistente = this.historial.find(producto => producto.matricula === data.producto.matricula);
+      this.socket.onopen = () => {
+        console.log("Conexión WebSocket establecida");
+      };
 
-        if (!productoExistente) {
-          this.historial.unshift(data.producto);
+      this.socket.onerror = (error) => {
+        console.error("Error en WebSocket:", error);
+      };
 
-          if (this.historial.length > 10) {
-            this.historial.pop();
+      this.socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Mensaje recibido del WebSocket:', data);
+
+        if (data.type === 'update') {
+          const productoExistente = this.historial.find(producto => producto.matricula === data.producto.matricula);
+
+          if (!productoExistente) {
+            this.historial.unshift(data.producto);
+
+            if (this.historial.length > 10) {
+              this.historial.pop();
+            }
           }
-        }
-      } else if (data.type === 'delete') {
-        console.log('Producto a eliminar:', data.matricula);
+        } else if (data.type === 'delete') {
+          console.log('Producto a eliminar:', data.matricula);
 
-        this.historial = this.historial.filter(producto => producto.matricula !== data.matricula);
-        console.log("Producto eliminado del historial:", data.matricula);
-      }
-    };
+          this.historial = this.historial.filter(producto => producto.matricula !== data.matricula);
+          console.log("Producto eliminado del historial:", data.matricula);
+        }
+      };
+
+      this.socket.onclose = () => {
+        console.log("Conexión WebSocket cerrada, intentando reconectar...");
+        setTimeout(this.connectWebSocket, 5000);
+      };
+    }
   }
 };
 </script>
 
+<style scoped>
+/* Añade tus estilos aquí */
+</style>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');

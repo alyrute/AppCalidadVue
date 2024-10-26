@@ -82,6 +82,7 @@ export default {
       showConfirmPopup: false,
       productoParaEliminar: null,
       isConfirming: false,
+      messageQueue: [], // Cola de mensajes
     };
   },
   created() {
@@ -103,6 +104,10 @@ export default {
 
       this.socket.onopen = () => {
         console.log("Conexión WebSocket establecida");
+        // Enviar mensajes en cola
+        while (this.messageQueue.length > 0) {
+          this.socket.send(this.messageQueue.shift());
+        }
       };
 
       this.socket.onerror = (error) => {
@@ -128,6 +133,13 @@ export default {
         console.log("Conexión WebSocket cerrada, intentando reconectar...");
         setTimeout(this.connectWebSocket, 5000);
       };
+    },
+    sendMessage(message) {
+      if (this.socket.readyState === WebSocket.OPEN) {
+        this.socket.send(message);
+      } else {
+        this.messageQueue.push(message);
+      }
     },
     async registrarLectura() {
       this.error = null;
@@ -187,7 +199,7 @@ export default {
         
         this.producto = producto;
         this.codigo = '';
-        this.socket.send(JSON.stringify({ type: 'update', producto: this.producto }));
+        this.sendMessage(JSON.stringify({ type: 'update', producto: this.producto })); // Enviar actualización por WebSocket
       } catch (err) {
         this.error = err.message;
       } finally {
@@ -230,7 +242,7 @@ export default {
           this.producto = null;
         }
 
-        this.socket.send(JSON.stringify({ type: 'delete', codigoof: this.productoParaEliminar.codigoof }));
+        this.sendMessage(JSON.stringify({ type: 'delete', codigoof: this.productoParaEliminar.codigoof }));
 
         this.productoParaEliminar = null;
         this.showConfirmPopup = false;
